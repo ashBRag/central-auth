@@ -1,6 +1,12 @@
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache g++ make python3 libc6-compat curl
+RUN apk add --no-cache \
+    g++ \
+    make \
+    python3 \
+    libc6-compat \
+    curl
+
 RUN npm install -g pnpm
 
 WORKDIR /app
@@ -15,7 +21,6 @@ COPY . .
 RUN pnpm run prisma:generate
 RUN pnpm run build
 
-# Remove development dependencies after building
 RUN CI=true pnpm prune --prod --ignore-scripts
 
 
@@ -27,6 +32,8 @@ ENV NODE_ENV=production
 
 RUN addgroup -g 1001 -S nodejs \
     && adduser -S nestjs -u 1001
+
+RUN apk add --no-cache curl
 
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
