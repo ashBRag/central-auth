@@ -445,3 +445,42 @@ Reuse the existing:
 - Redis OAuth transaction mechanism
 
 The final result should make Google authentication behave as another authentication method for the existing Identity Service, rather than creating a separate authentication/session system.
+
+---
+
+## Implementation Notes (as built)
+
+### Token transport
+
+The callback never puts tokens in the redirect. Instead:
+
+1. On successful authentication, the callback mints a one-time, single-use, short-lived (60s) `session_code`, stores `{ userId }` under it in Redis, and redirects to the transaction's `successUrl` with `?session_code=...`.
+2. The frontend immediately exchanges it:
+
+   ```http
+   POST /v1/auth/oauth/session
+   { "sessionCode": "..." }
+
+   200 OK
+   { "accessToken": "...", "refreshToken": "..." }
+   ```
+
+3. That endpoint deletes the code (single-use), loads the resolved user, and calls the **same** `AuthService.issueTokenPair` used by `/v1/auth/login` and `/v1/auth/signup` — no parallel token-issuance path.
+
+### Error redirects
+
+- `error=<provider error>` on the callback → transaction consumed, redirect to `errorUrl?error=oauth_denied`.
+- Missing `code` → `errorUrl?error=oauth_failed`.
+- Existing user email with no matching `(provider, provider_subject)` identity, or an unverified email on a would-be new account → `errorUrl?error=account_link_required` (no auto-linking, per the "Existing Email" policy above — no linking mechanism exists yet).
+- Any OIDC/OAuth validation failure from `openid-client` (`OPError`/`RPError` — issuer, signature, nonce, expiry, etc.) → `errorUrl?error=oauth_failed`. Raw provider/library errors are never forwarded to the redirect.
+- Missing/expired/mismatched transaction → request rejected directly (no transaction means no known `errorUrl` to redirect to).
+
+### Identity resolution
+
+`identities` table stores `provider`, `providerSubject`, `email`, `emailVerified`, `userId`, with a `(provider, providerSubject)` unique constraint. New user + identity creation happens inside one `prisma.$transaction`; a unique-constraint race on concurrent callbacks is handled by re-reading the identity that won.
+
+`User.passwordHash` is nullable — OAuth-only users have no password, and `AuthService.login` explicitly rejects login attempts against such accounts rather than relying on bcrypt's comparison behavior against an empty hash.
+
+### Redirect target
+
+`successUrl`/`errorUrl` come from the `RedirectTarget` resolved by the start endpoint (see `oauth-redirect.md`) and carried through the Redis transaction — the callback itself never receives or trusts a redirect URL from the request.

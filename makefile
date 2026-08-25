@@ -1,7 +1,7 @@
 .PHONY: install dev build start test test-watch lint \
 	docker-build docker-up docker-down docker-restart docker-logs \
 	prisma-generate prisma-migrate prisma-deploy prisma-studio \
-	clean help
+	db-init clean help
 
 # Install dependencies
 install:
@@ -56,6 +56,10 @@ prisma-deploy:
 prisma-studio:
 	pnpm run prisma:studio
 
+# Create and seed tables directly via psql (requires the shared dev-stack Postgres to be running)
+db-init:
+	psql "$$DATABASE_URL" -f scripts/init.sql
+
 # Remove build output and generated Prisma client
 clean:
 	rm -rf dist libs/prisma/src/generated
@@ -76,4 +80,5 @@ help:
 	@echo "prisma-migrate  Create and apply a dev migration"
 	@echo "prisma-deploy   Apply pending migrations (prod)"
 	@echo "prisma-studio   Open Prisma Studio"
+	@echo "db-init         Create and seed tables via psql (scripts/init.sql)"
 	@echo "clean           Remove dist and generated Prisma client"

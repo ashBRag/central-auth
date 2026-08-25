@@ -2,6 +2,7 @@ export interface AccessTokenPayload {
   sub: string;
   email: string;
   type: 'access';
+  scope: string;
 }
 
 export interface RefreshTokenPayload {

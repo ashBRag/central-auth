@@ -181,3 +181,21 @@ generate secure OAuth/OIDC request
 ```
 
 Keep the implementation minimal and aligned with the existing NestJS architecture.
+
+---
+
+## Implementation Notes (as built)
+
+The endpoint additionally requires a `redirect_slug` query parameter:
+
+```http
+GET /v1/auth/oauth/google?redirect_slug=default
+```
+
+`redirect_slug` is resolved against a server-side `RedirectTarget` registry (`redirect_targets` table: `slug`, `successUrl`, `errorUrl`, `enabled`) — the frontend selects *which* allowlisted destination it wants by slug, never by supplying a URL directly. This prevents open redirects while still letting different callers (e.g. different frontends) land on different destinations.
+
+The resolved `successUrl`/`errorUrl` are stored in the Redis OAuth transaction alongside `provider`/`state`/`nonce`/`pkce_verifier`/`created_at`/`expires_at`, so the callback (see `oauth-callback.md`) can complete the redirect without any additional frontend input.
+
+Google provider config (`oidc_providers` row) and the `default` redirect target are populated via `prisma/seed.ts` (`pnpm prisma:seed`), reading `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_CALLBACK_URL` and `OAUTH_DEFAULT_SUCCESS_URL`/`OAUTH_DEFAULT_ERROR_URL` from the environment — not read directly by the request path.
+
+Library used: `openid-client@5` (CJS-compatible; brings `jose@4` transitively). Redis access via `libs/redis` (`ioredis`).

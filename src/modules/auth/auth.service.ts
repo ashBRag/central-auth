@@ -25,11 +25,14 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       type: "access",
+      scope: process.env.JWT_DEFAULT_SCOPE ?? "",
     };
     return this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
       expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN ??
         "15m") as JwtSignOptions["expiresIn"],
+      issuer: process.env.JWT_ISSUER,
+      audience: process.env.JWT_AUDIENCE,
     });
   }
 
