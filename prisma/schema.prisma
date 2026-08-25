@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../libs/prisma/src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  passwordHash      String?
+  refreshTokenHash  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identities Identity[]
+
+  @@map("users")
+}
+
+model OidcProvider {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  issuerUrl    String
+  clientId     String
+  clientSecret String
+  callbackUrl  String
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("oidc_providers")
+}
+
+model Identity {
+  id              String   @id @default(uuid())
+  provider        String
+  providerSubject String
+  email           String
+  emailVerified   Boolean  @default(false)
+  userId          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerSubject])
+  @@map("identities")
+}
+
+model RedirectTarget {
+  id         String   @id @default(uuid())
+  slug       String   @unique
+  successUrl String
+  errorUrl   String
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("redirect_targets")
+}
