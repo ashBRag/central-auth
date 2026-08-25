@@ -22,9 +22,7 @@ services:
       - JWT_AUDIENCE=${JWT_AUDIENCE}
       - JWT_DEFAULT_SCOPE=${JWT_DEFAULT_SCOPE}
       - DATABASE_URL=${DATABASE_URL}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=${REDIS_URL}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s

@@ -11,11 +11,7 @@ export class RedisService extends Redis implements OnModuleInit, OnModuleDestroy
   private readonly logger = new Logger(RedisService.name);
 
   constructor() {
-    super({
-      host: process.env.REDIS_HOST ?? "redis",
-      port: Number(process.env.REDIS_PORT) || 6379,
-      password: process.env.REDIS_PASSWORD,
-    });
+    super(process.env.REDIS_URL ?? "redis://redis:6379");
 
     this.on("error", (err) => {
       this.logger.error(`Redis connection error: ${err.message}`);
