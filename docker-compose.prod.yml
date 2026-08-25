@@ -1,0 +1,43 @@
+services:
+  api:
+    image: central-auth-api:prod
+
+    build:
+      context: ./
+      dockerfile: Dockerfile.prod
+
+    ports:
+      - "${PORT}:3001"
+
+    environment:
+      PORT: ${PORT}
+
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      JWT_DEFAULT_SCOPE: ${JWT_DEFAULT_SCOPE}
+
+      DATABASE_URL: ${DATABASE_URL}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    restart: unless-stopped
+
+    networks:
+      - backend-internal
+
+networks:
+  backend-internal:
+    external: true
