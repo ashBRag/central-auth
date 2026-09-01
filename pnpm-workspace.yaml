@@ -1,2 +1,5 @@
-ignoredBuiltDependencies:
-  - bcrypt
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - "prisma"
+  - "bcrypt"
+  - "unrs-resolver"

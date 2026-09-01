@@ -2,7 +2,6 @@
   "name": "central-auth",
   "version": "1.0.0",
   "scripts": {
-    "postinstall": "prisma generate",
     "dev": "node scripts/copy-prisma-client.js && nest start --watch",
     "build": "nest build  -p tsconfig.json",
     "postbuild": "tsc-alias -p tsconfig.json && node scripts/copy-prisma-client.js",
@@ -67,12 +66,5 @@
     "@libs/logger": "dist/libs/logger/src",
     "@libs/prisma": "dist/libs/prisma/src",
     "@libs/redis": "dist/libs/redis/src"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma",
-      "bcrypt"
-    ]
   }
 }

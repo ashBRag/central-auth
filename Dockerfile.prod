@@ -1,5 +1,8 @@
+# syntax=docker/dockerfile:1
+
 FROM node:20-alpine AS builder
 
+# Native build dependencies
 RUN apk add --no-cache \
     g++ \
     make \
@@ -7,22 +10,36 @@ RUN apk add --no-cache \
     libc6-compat \
     curl
 
-RUN npm install -g pnpm
+# Pin pnpm major version
+RUN npm install -g pnpm@10
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml prisma.config.ts ./
+# Copy dependency/config files first for Docker layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
+
+# Prisma schema is needed during prisma generate
 COPY prisma ./prisma
 
+# Install dependencies with the locked dependency graph
 RUN pnpm install --frozen-lockfile
 
+# Copy application source
 COPY . .
 
+# Generate Prisma Client
 RUN pnpm run prisma:generate
+
+# Build NestJS application
 RUN pnpm run build
 
-RUN CI=true pnpm prune --prod --ignore-scripts
+# Remove dev dependencies
+RUN pnpm prune --prod --ignore-scripts
 
+
+# ============================================================
+# Production
+# ============================================================
 
 FROM node:20-alpine AS production
 
@@ -30,15 +47,31 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Non-root user
 RUN addgroup -g 1001 -S nodejs \
     && adduser -S nestjs -u 1001
 
+# Runtime dependency for health checks
 RUN apk add --no-cache curl
 
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+# Copy production dependencies
+COPY --from=builder --chown=nestjs:nodejs \
+    /app/node_modules ./node_modules
+
+# Copy compiled application
+COPY --from=builder --chown=nestjs:nodejs \
+    /app/dist ./dist
+
+# Copy package metadata
+COPY --from=builder --chown=nestjs:nodejs \
+    /app/package.json ./package.json
+
+# Prisma files/config
+COPY --from=builder --chown=nestjs:nodejs \
+    /app/prisma ./prisma
+
+COPY --from=builder --chown=nestjs:nodejs \
+    /app/prisma.config.ts ./prisma.config.ts
 
 USER nestjs
 
