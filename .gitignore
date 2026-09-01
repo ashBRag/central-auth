@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .env
+.env.staging
+.env.production
+.env.development
 *.log
 
 # Prisma generated client (regenerated via `pnpm prisma:generate`)
