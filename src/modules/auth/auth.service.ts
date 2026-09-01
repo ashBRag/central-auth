@@ -136,15 +136,12 @@ export class AuthService {
   }
 
   issueServiceToken(dto: IssueServiceTokenDto): { accessToken: string } {
-    console.log("[issueServiceToken] dto:", dto);
-
     if (!Object.values(InternalServiceSlug).includes(dto.sub as InternalServiceSlug)) {
-      console.log("[issueServiceToken] 'sub' not in InternalServiceSlug:", dto.sub, Object.values(InternalServiceSlug));
       throw new AuthenticationError("Unknown service in 'sub'.");
     }
 
-    console.log("[issueServiceToken] INTERNAL_SERVICE_KEYS[aud]:", dto.aud, "=>", INTERNAL_SERVICE_KEYS[dto.aud as InternalServiceSlug]);
-    if (!INTERNAL_SERVICE_KEYS[dto.aud as InternalServiceSlug]) {
+    const serviceSecret = INTERNAL_SERVICE_KEYS[dto.aud as InternalServiceSlug];
+    if (!serviceSecret) {
       throw new AuthenticationError("Unknown service in 'aud'.");
     }
 
@@ -156,15 +153,11 @@ export class AuthService {
       ...(dto.user_id ? { user_id: dto.user_id } : {}),
     };
 
-    console.log("[issueServiceToken] signing payload:", payload, "JWT_ACCESS_SECRET set:", !!process.env.JWT_ACCESS_SECRET, "JWT_ISSUER:", process.env.JWT_ISSUER);
-
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
+      secret: serviceSecret,
       expiresIn: "15m",
       issuer: process.env.JWT_ISSUER,
     });
-
-    console.log("[issueServiceToken] token issued successfully");
 
     return { accessToken };
   }
