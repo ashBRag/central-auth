@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  Headers,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -57,10 +56,7 @@ export class AuthController {
 
   @Post("service-token")
   @HttpCode(HttpStatus.OK)
-  issueServiceToken(
-    @Body() dto: IssueServiceTokenDto,
-    @Headers("x-service-key") serviceKey: string | undefined
-  ) {
-    return this.authService.issueServiceToken(dto, serviceKey);
+  issueServiceToken(@Body() dto: IssueServiceTokenDto) {
+    return this.authService.issueServiceToken(dto);
   }
 }

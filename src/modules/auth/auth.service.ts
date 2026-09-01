@@ -135,19 +135,12 @@ export class AuthService {
     });
   }
 
-  issueServiceToken(
-    dto: IssueServiceTokenDto,
-    serviceKey: string | undefined
-  ): { accessToken: string } {
-    const subKey = INTERNAL_SERVICE_KEYS[dto.sub as InternalServiceSlug];
-    if (!subKey) {
+  issueServiceToken(dto: IssueServiceTokenDto): { accessToken: string } {
+    if (!Object.values(InternalServiceSlug).includes(dto.sub as InternalServiceSlug)) {
       throw new AuthenticationError("Unknown service in 'sub'.");
     }
     if (!INTERNAL_SERVICE_KEYS[dto.aud as InternalServiceSlug]) {
       throw new AuthenticationError("Unknown service in 'aud'.");
-    }
-    if (!serviceKey || serviceKey !== subKey) {
-      throw new AuthenticationError("Invalid service key.");
     }
 
     const payload: ServiceTokenPayload = {
