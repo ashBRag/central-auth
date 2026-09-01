@@ -2,13 +2,15 @@ import { Injectable } from "@nestjs/common";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { PrismaService } from "@libs/prisma";
-import { SignupDto, LoginDto } from "../../schemas/auth.dto";
+import { SignupDto, LoginDto, IssueServiceTokenDto } from "../../schemas/auth.dto";
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
+  ServiceTokenPayload,
   TokenPair,
 } from "./jwt-payload.interface";
 import { ConflictError, AuthenticationError } from "../../errors/app-errors";
+import { INTERNAL_SERVICE_KEYS, InternalServiceSlug } from "../../config/config";
 
 const SALT_ROUNDS = 12;
 const REFRESH_TOKEN_SALT_ROUNDS = 10;
@@ -131,5 +133,38 @@ export class AuthService {
       where: { id: userId },
       data: { refreshTokenHash: null },
     });
+  }
+
+  issueServiceToken(
+    dto: IssueServiceTokenDto,
+    serviceKey: string | undefined
+  ): { accessToken: string } {
+    const subKey = INTERNAL_SERVICE_KEYS[dto.sub as InternalServiceSlug];
+    if (!subKey) {
+      throw new AuthenticationError("Unknown service in 'sub'.");
+    }
+    if (!INTERNAL_SERVICE_KEYS[dto.aud as InternalServiceSlug]) {
+      throw new AuthenticationError("Unknown service in 'aud'.");
+    }
+    if (!serviceKey || serviceKey !== subKey) {
+      throw new AuthenticationError("Invalid service key.");
+    }
+
+    const payload: ServiceTokenPayload = {
+      sub: dto.sub,
+      aud: dto.aud,
+      scope: dto.scope,
+      type: "service",
+      ...(dto.user_id ? { user_id: dto.user_id } : {}),
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: "15m",
+      issuer: process.env.JWT_ISSUER,
+      audience: dto.aud,
+    });
+
+    return { accessToken };
   }
 }

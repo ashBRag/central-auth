@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class SignupDto {
   @IsEmail()
@@ -22,4 +22,21 @@ export class RefreshTokenDto {
   @IsString()
   @MinLength(1)
   refreshToken: string;
+}
+
+export class IssueServiceTokenDto {
+  @IsString()
+  @MinLength(1)
+  sub: string;
+
+  @IsString()
+  @MinLength(1)
+  aud: string;
+
+  @IsString()
+  scope: string;
+
+  @IsOptional()
+  @IsString()
+  user_id?: string;
 }

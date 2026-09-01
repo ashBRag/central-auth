@@ -2,13 +2,19 @@ import {
   Controller,
   Post,
   Body,
+  Headers,
   HttpCode,
   HttpStatus,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
-import { SignupDto, LoginDto, RefreshTokenDto } from "../../schemas/auth.dto";
+import {
+  SignupDto,
+  LoginDto,
+  RefreshTokenDto,
+  IssueServiceTokenDto,
+} from "../../schemas/auth.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RefreshJwtAuthGuard } from "./guards/refresh-jwt-auth.guard";
 import { CurrentUser } from "./decorators/current-user.decorator";
@@ -47,5 +53,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   logout(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.logout(user.id);
+  }
+
+  @Post("service-token")
+  @HttpCode(HttpStatus.OK)
+  issueServiceToken(
+    @Body() dto: IssueServiceTokenDto,
+    @Headers("x-service-key") serviceKey: string | undefined
+  ) {
+    return this.authService.issueServiceToken(dto, serviceKey);
   }
 }

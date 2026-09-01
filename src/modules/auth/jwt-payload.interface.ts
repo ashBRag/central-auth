@@ -11,7 +11,18 @@ export interface RefreshTokenPayload {
   type: 'refresh';
 }
 
-export type JwtPayload = AccessTokenPayload | RefreshTokenPayload;
+export interface ServiceTokenPayload {
+  sub: string;
+  aud: string;
+  scope: string;
+  user_id?: string;
+  type: 'service';
+}
+
+export type JwtPayload =
+  | AccessTokenPayload
+  | RefreshTokenPayload
+  | ServiceTokenPayload;
 
 export interface AuthenticatedUser {
   id: string;
